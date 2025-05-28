@@ -1,0 +1,6 @@
+posting_date,reference,debit,credit,account
+2024-01-01,CUST_PAYMENT,0.00,1000.00,Accounts Receivable
+2024-01-02,WIRE_12345,0.00,2500.00,Bank Transfer
+2024-01-03,ATM_500,500.00,0.00,Cash
+2024-01-04,CHECK_1500,0.00,1500.00,Accounts Receivable
+2024-01-05,TRANSFER_2000,2000.00,0.00,Bank Transfer 

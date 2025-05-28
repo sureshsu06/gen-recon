@@ -1,0 +1,8 @@
+invoice_date,vendor_invoice,po_number,amount,paid_amount,open_amount,description
+2024-05-01,INV-2023-101,PO-555,1200.00,0.00,1200.00,Office chairs
+2024-05-10,INV-2023-102,PO-556,850.00,850.00,0.00,Desks
+2024-05-15,INV-2023-103,PO-557,500.00,0.00,500.00,Monitor arms
+2024-05-20,INV-2023-104,PO-558,2000.00,500.00,1500.00,Conference table
+2024-05-25,INV-2023-105,PO-559,300.00,0.00,300.00,Shipping charges
+2024-05-30,INV-2023-106,PO-560,400.00,0.00,400.00,Extra chairs
+2024-05-28,INV-2023-888,PO-561,100.00,0.00,100.00,Old invoice

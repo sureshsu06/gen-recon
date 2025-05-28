@@ -1,0 +1,7 @@
+statement_date,vendor_name,invoice_ref,invoice_date,due_date,amount_due,open_balance,description
+2024-06-01,Acme Supplies,INV-2023-101,2024-05-01,2024-05-31,1200.00,1200.00,Office chairs
+2024-06-01,Acme Supplies,INV-2023-102,2024-05-10,2024-06-09,850.00,0.00,Desks (Paid)
+2024-06-01,Acme Supplies,INV-2023-103,2024-05-15,2024-06-14,500.00,500.00,Monitor arms
+2024-06-01,Acme Supplies,INV-2023-104,2024-05-20,2024-06-19,2000.00,1500.00,Conference table (Partial payment)
+2024-06-01,Acme Supplies,INV-2023-105,2024-05-25,2024-06-24,300.00,300.00,Shipping charges
+2024-06-01,Acme Supplies,INV-2023-999,2024-05-28,2024-06-27,100.00,100.00,Unknown invoice
