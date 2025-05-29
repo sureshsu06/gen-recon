@@ -1,6 +1,27 @@
-posting_date,reference,debit,credit,account
-2024-01-01,CUST_PAYMENT,0.00,1000.00,Accounts Receivable
-2024-01-02,WIRE_12345,0.00,2500.00,Bank Transfer
-2024-01-03,ATM_500,500.00,0.00,Cash
-2024-01-04,CHECK_1500,0.00,1500.00,Accounts Receivable
-2024-01-05,TRANSFER_2000,2000.00,0.00,Bank Transfer 
+Date,Description,Reference,Account,Debit,Credit
+2024-01-01,Beginning Balance,BB-2024,Cash,,50000.00
+2024-01-02,Wire Transfer Received,WT-20240102,Cash,,25000.00
+2024-01-03,Check to Vendor ABC,1001,Cash,1250.50,
+2024-01-04,Payroll Processing,PR-01-2024,Cash,45678.90,
+2024-01-05,Customer Invoice Payment,INV-10234,Cash,,15000.00
+2024-01-05,Customer Invoice Payment,INV-10235,Cash,,15000.00
+2024-01-06,Check to Vendor XYZ,1002,Cash,5000.00,
+2024-01-08,Check to Supplier,1003,Cash,3500.00,
+2024-01-09,Euro Deposit (10000 EUR @ 1.235),FX-EUR-01,Cash,,12350.75
+2024-01-10,Vendor ACH Payment,VND-789456,Cash,8900.00,
+2024-01-11,Cash Deposit from Sales,CD-20240111,Cash,,5000.00
+2024-01-12,Check to Consultant,1004,Cash,2345.67,
+2024-01-12,Office Rent Payment,1005,Cash,1234.56,
+2024-01-15,Wire Transfer to Subsidiary,WT-OUT-20240115,Cash,20000.00,
+2024-01-16,Q1 Interest Income,INT-Q1,Cash,,125.45
+2024-01-17,Vendor Payment Reversal,VND-789456-REV,Cash,,8900.00
+2024-01-18,Customer Payment Received,INV-10238,Cash,,7500.00
+2024-01-22,Equipment Purchase,1006,Cash,4567.89,
+2024-01-23,Office Supplies Purchase,DC-SUPPLIES,Cash,234.56,
+2024-01-24,Quarterly Tax Payment,TAX-Q4-2023,Cash,12000.00,
+2024-01-25,Credit Card Settlements,CC-BATCH-0125,Cash,,18945.23
+2024-01-31,Wire Transfer Received,WT-20240131,Cash,,30000.00
+2024-01-31,Bank Service Charges,BANK-FEES-JAN,Cash,483.90,
+2024-01-31,Accrued Bank Interest,INT-ACCRUAL,Cash,,12.50
+2024-02-01,Check to Marketing Agency,1007,Cash,2500.00,
+2024-02-02,Customer Advance Payment,ADV-10245,Cash,,8000.00
