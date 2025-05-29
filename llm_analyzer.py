@@ -95,7 +95,14 @@ class LLMAnalyzer:
             str: Formatted prompt for LLM
         """
         base_prompt = f"""
-You are a senior accountant performing a reconciliation. Follow these steps, and ask for clarification if you are unsure at any point:
+You are a senior accountant performing a reconciliation. Your initial pass must be strict and accurate, but allow for minor formatting differences:
+
+- For the first pass, only suggest matches where **date, reference, amount, and description are all exact or highly similar**.
+- Allow for small differences in spaces, dashes, and similar formatting in key fields (e.g., 'INV-1001' vs 'INV 1001').
+- Do not suggest a match unless you are confident (confidence >= 0.9).
+- For each match, provide a detailed reasoning string explaining why the match is valid, referencing each field (date, description, reference, amount).
+- Only allow looser or fuzzy matches in later passes, after all strict matches are exhausted.
+- If you are unsure, do not match and flag for review.
 
 1. **Identify the reconciliation type** (e.g., bank-to-GL, AP-to-vendor, AR-to-customer, etc.).
    - If you are not sure, ask the user for clarification before proceeding.
@@ -105,25 +112,28 @@ You are a senior accountant performing a reconciliation. Follow these steps, and
    - If you are unsure, ask the user for clarification.
    - List the keys and provide reasoning for their selection.
 
-3. **High-confidence matching:**
-   - Use the identified keys to match items between the two datasets.
-   - Show matched items, the keys used, and the confidence/reasoning for each match.
+3. **High-confidence matching (Initial Pass):**
+   - Only suggest matches where date, reference, amount, and description are all exact or highly similar (allowing for minor formatting differences).
+   - For each match, provide a confidence score (>= 0.9) and a detailed reasoning string.
+   - Do not suggest a match if any key field is missing or not highly similar.
 
 4. **Handle unmatched items:**
-   - For items that remain unmatched, check for common reconciliation issues:
+   - For items that remain unmatched, suggest logic for identifying common reconciliation issues:
      - Timing differences (e.g., date off by a few days)
      - Split payments (one-to-many or many-to-one matches)
      - Reference mismatches (e.g., typo in PO ID)
    - If you are unsure, ask the user for clarification.
 
 5. **List completely unmatched items:**
-   - Clearly list items that could not be matched by any rule or heuristic.
+   - Suggest logic for identifying items that could not be matched by any rule or heuristic (do NOT output row indices).
 
 6. **Historical pattern check:**
    - If historical data is available, check for recurring issues (e.g., recurring timing differences, regular split payments, etc.).
    - Note any patterns and suggest possible resolutions.
 
 ---
+
+IMPORTANT: Only use column names that are present in the provided file schemas and samples. Do not invent or generalize column names (e.g., use 'Debit' and 'Credit' if those are present, not 'Amount').
 
 File 1 Schema:
 {df1.dtypes.to_string()}
@@ -167,23 +177,6 @@ Based on the above, analyze and return a JSON object with the following structur
             "confidence": float,
             "reasoning": "string",
             "options": {}
-        }
-    ],
-    "matched_items": [
-        {
-            "source_index": int,
-            "target_index": int,
-            "keys_used": ["string"],
-            "confidence": float,
-            "reasoning": "string"
-        }
-    ],
-    "unmatched_items": [
-        {
-            "index": int,
-            "side": "source|target",
-            "reason": "string (timing difference, split payment, reference mismatch, unknown, etc.)",
-            "clarification_needed": "string (if you need clarification, state the question here, otherwise empty)"
         }
     ],
     "risk_factors": [
@@ -242,6 +235,7 @@ IMPORTANT:
 6. Keep descriptions concise but informative
 7. For historical_patterns.examples, use an array of strings, not objects
 8. For any field that is a list of objects (e.g., affected_items, conditions), do NOT use plain numbers or strings. Always use a list of dictionaries with the required keys as shown in the example above.
+9. Do NOT output row indices or DataFrame indices. Only suggest logic, rules, and criteria for matching and identifying unmatched items. The engine will handle row-level matching and indices based on your suggested logic.
 """
         return base_prompt
     

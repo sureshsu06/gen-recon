@@ -7,14 +7,21 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List
 import json
 import numpy as np
+import math
 
 class NumpyEncoder(json.JSONEncoder):
-    """Custom JSON encoder for NumPy types."""
+    """Custom JSON encoder for NumPy types and NaN handling."""
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
+            if math.isnan(obj):
+                return None
             return float(obj)
+        elif isinstance(obj, float):
+            if math.isnan(obj):
+                return None
+            return obj
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         return super().default(obj)
@@ -87,34 +94,18 @@ class MVPReconciler:
 
     def _generate_match_report(self, df1: pd.DataFrame, df2: pd.DataFrame, 
                              results: Dict[str, Any], analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Generate detailed match report for each matched/pending item."""
+        """Generate detailed match report for each matched/pending item, showing full transaction rows."""
         match_report = []
-        
         for match in results.get('matched', []):
-            source_item = df1.iloc[match['source_index']]
-            target_item = df2.iloc[match['target_index']]
-            
+            source_item = df1.iloc[match['source_index']].to_dict()
+            target_item = df2.iloc[match['target_index']].to_dict()
             match_report.append({
-                'source': {
-                    'date': source_item.get('date', ''),
-                    'description': source_item.get('description', ''),
-                    'reference': source_item.get('reference', ''),
-                    'amount': source_item.get('amount', 0)
-                },
-                'target': {
-                    'date': target_item.get('date', ''),
-                    'description': target_item.get('description', ''),
-                    'reference': target_item.get('reference', ''),
-                    'amount': target_item.get('amount', 0)
-                },
+                'source_transaction': source_item,
+                'target_transaction': target_item,
                 'match_confidence': match.get('confidence', 0),
                 'match_criteria': match.get('criteria', ''),
-                'days_difference': self._calculate_days_difference(
-                    source_item.get('date', ''), 
-                    target_item.get('date', '')
-                )
+                'rule_name': match.get('rule_name', '')
             })
-        
         return match_report
 
     def _categorize_unmatched_items(self, df1: pd.DataFrame, df2: pd.DataFrame,
