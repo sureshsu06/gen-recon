@@ -143,43 +143,68 @@ class MVPReconciler:
 
     def _generate_reconciliation_summary(self, df1: pd.DataFrame, df2: pd.DataFrame,
                                        results: Dict[str, Any], analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate reconciliation summary with adjusted balances."""
-        # Find the best rule for balance calculation from LLM output
-        bank_rule = self._find_balance_rule(analysis, df1)
-        gl_rule = self._find_balance_rule(analysis, df2)
-
-        summary = {
-            'bank_statement_balance': self._calculate_balance(df1, bank_rule),
-            'outstanding_checks': self._calculate_outstanding_checks(results),
-            'deposits_in_transit': self._calculate_deposits_in_transit(results),
-            'other_adjustments': self._calculate_other_adjustments(results),
-            'adjusted_bank_balance': 0,  # Calculated below
-            'gl_cash_balance': self._calculate_balance(df2, gl_rule),
-            'unrecorded_fees': self._calculate_unrecorded_fees(results),
-            'unrecorded_interest': self._calculate_unrecorded_interest(results),
-            'adjusted_gl_balance': 0,  # Calculated below
-            'difference': 0  # Calculated below
-        }
-        
-        # Calculate adjusted balances
-        summary['adjusted_bank_balance'] = (
-            summary['bank_statement_balance'] -
-            summary['outstanding_checks'] +
-            summary['deposits_in_transit'] +
-            summary['other_adjustments']
-        )
-        
-        summary['adjusted_gl_balance'] = (
-            summary['gl_cash_balance'] -
-            summary['unrecorded_fees'] +
-            summary['unrecorded_interest']
-        )
-        
-        summary['difference'] = (
-            summary['adjusted_bank_balance'] -
-            summary['adjusted_gl_balance']
-        )
-        
+        """Generate reconciliation summary with adjusted balances, context-aware by reconciliation type."""
+        recon_type = analysis.get('reconciliation_type', 'bank_to_gl')
+        summary = {}
+        if recon_type == 'bank_to_gl':
+            # Existing bank-to-GL summary
+            bank_rule = self._find_balance_rule(analysis, df1)
+            gl_rule = self._find_balance_rule(analysis, df2)
+            summary = {
+                'bank_statement_balance': self._calculate_balance(df1, bank_rule),
+                'outstanding_checks': self._calculate_outstanding_checks(results),
+                'deposits_in_transit': self._calculate_deposits_in_transit(results),
+                'other_adjustments': self._calculate_other_adjustments(results),
+                'adjusted_bank_balance': 0,  # Calculated below
+                'gl_cash_balance': self._calculate_balance(df2, gl_rule),
+                'unrecorded_fees': self._calculate_unrecorded_fees(results),
+                'unrecorded_interest': self._calculate_unrecorded_interest(results),
+                'adjusted_gl_balance': 0,  # Calculated below
+                'difference': 0  # Calculated below
+            }
+            summary['adjusted_bank_balance'] = (
+                summary['bank_statement_balance'] -
+                summary['outstanding_checks'] +
+                summary['deposits_in_transit'] +
+                summary['other_adjustments']
+            )
+            summary['adjusted_gl_balance'] = (
+                summary['gl_cash_balance'] -
+                summary['unrecorded_fees'] +
+                summary['unrecorded_interest']
+            )
+            summary['difference'] = (
+                summary['adjusted_bank_balance'] -
+                summary['adjusted_gl_balance']
+            )
+        elif recon_type == 'ap':
+            # AP reconciliation summary
+            summary = {
+                'ap_ledger_balance': self._calculate_balance(df1),
+                'vendor_statement_balance': self._calculate_balance(df2),
+                'open_invoices': len([item for item in results.get('unmatched_source', []) if item.get('type') == 'invoice']),
+                'unapplied_payments': len([item for item in results.get('unmatched_source', []) if item.get('type') == 'payment']),
+                'vendor_credits': len([item for item in results.get('unmatched_source', []) if item.get('type') == 'credit']),
+                'disputed_items': len([item for item in results.get('unmatched_source', []) if item.get('type') == 'dispute']),
+                'difference': self._calculate_balance(df1) - self._calculate_balance(df2)
+            }
+        elif recon_type == 'vendor':
+            # Vendor reconciliation summary
+            summary = {
+                'vendor_statement_balance': self._calculate_balance(df1),
+                'ap_ledger_balance': self._calculate_balance(df2),
+                'unmatched_vendor_invoices': len([item for item in results.get('unmatched_source', []) if item.get('type') == 'invoice']),
+                'unmatched_ap_ledger_items': len([item for item in results.get('unmatched_target', [])]),
+                'disputed_items': len([item for item in results.get('unmatched_source', []) if item.get('type') == 'dispute']),
+                'difference': self._calculate_balance(df1) - self._calculate_balance(df2)
+            }
+        else:
+            # Default: just show balances and difference
+            summary = {
+                'file1_balance': self._calculate_balance(df1),
+                'file2_balance': self._calculate_balance(df2),
+                'difference': self._calculate_balance(df1) - self._calculate_balance(df2)
+            }
         return summary
 
     def _find_balance_rule(self, analysis: Dict[str, Any], df: pd.DataFrame) -> dict:
@@ -273,6 +298,15 @@ class MVPReconciler:
         
         return actionable_items
 
+def nan_to_none(obj):
+    if isinstance(obj, float) and (np.isnan(obj) or pd.isna(obj)):
+        return None
+    if isinstance(obj, dict):
+        return {k: nan_to_none(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [nan_to_none(x) for x in obj]
+    return obj
+
 def main():
     """Example usage of the reconciliation engine."""
     import argparse
@@ -286,9 +320,13 @@ def main():
     reconciler = MVPReconciler()
     results = reconciler.reconcile(args.file1, args.file2)
     
+    # After results are generated, before writing JSON:
+    if 'one_to_many_matched' in results:
+        results['fee_group_matches'] = results['one_to_many_matched']
+    
     # Save results to JSON file
     with open(args.output, 'w') as f:
-        json.dump(results, f, indent=2, cls=NumpyEncoder)
+        json.dump(nan_to_none(results), f, indent=2, cls=NumpyEncoder)
     
     # Print summary
     print("\nReconciliation Results:")
